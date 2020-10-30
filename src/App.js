@@ -1,5 +1,4 @@
-import React from "react";
-
+import React, { useState, useEffect } from 'react'
 import {
   SafeAreaView,
   View,
@@ -8,48 +7,61 @@ import {
   StatusBar,
   StyleSheet,
   TouchableOpacity,
-} from "react-native";
+} from 'react-native'
 
-export default function App() {
-  async function handleLikeRepository(id) {
-    // Implement "Like Repository" functionality
+import api from './services/api'
+
+const App = () => {
+  const [state, setState] = useState([])
+
+  useEffect(() => {
+    api.get('repositories').then(res => {
+      setState(res.data)
+    })
+  }, [])
+
+  const handleLikeRepository = async id => {
+    const { data } = await api.post(`repositories/${id}/like`)
+
+    const repositoriesUpdated = state.map(item => item.id === id ? data : item)
+
+    setState(repositoriesUpdated)
   }
 
   return (
     <>
       <StatusBar barStyle="light-content" backgroundColor="#7159c1" />
+
       <SafeAreaView style={styles.container}>
-        <View style={styles.repositoryContainer}>
-          <Text style={styles.repository}>Repository 1</Text>
+        <FlatList
+          data={state}
+          keyExtractor={item => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.repositoryContainer}>
+              <Text style={styles.repository}>{item.title}</Text>
 
-          <View style={styles.techsContainer}>
-            <Text style={styles.tech}>
-              ReactJS
-            </Text>
-            <Text style={styles.tech}>
-              Node.js
-            </Text>
-          </View>
+              <View style={styles.techsContainer}>
+                {
+                  item.techs.map(item => (
+                    <Text key={item} style={styles.tech}>{item}</Text>
+                  ))
+                }
+              </View>
 
-          <View style={styles.likesContainer}>
-            <Text
-              style={styles.likeText}
-              // Remember to replace "1" below with repository ID: {`repository-likes-${repository.id}`}
-              testID={`repository-likes-1`}
-            >
-              3 curtidas
-            </Text>
-          </View>
+              <View style={styles.likesContainer}>
+                <Text style={styles.likeText} testID= {`repository-likes-${item.id}`}>{item.likes} curtidas</Text>
+              </View>
 
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => handleLikeRepository(1)}
-            // Remember to replace "1" below with repository ID: {`like-button-${repository.id}`}
-            testID={`like-button-1`}
-          >
-            <Text style={styles.buttonText}>Curtir</Text>
-          </TouchableOpacity>
-        </View>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => handleLikeRepository(item.id)}
+                testID={`like-button-${item.id}`}
+              >
+                <Text style={styles.buttonText}>Curtir</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        />
       </SafeAreaView>
     </>
   );
@@ -97,11 +109,14 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   buttonText: {
-    fontSize: 14,
+    fontSize: 20,
     fontWeight: "bold",
     marginRight: 10,
     color: "#fff",
+    textAlign: 'center',
     backgroundColor: "#7159c1",
     padding: 15,
   },
 });
+
+export default App
